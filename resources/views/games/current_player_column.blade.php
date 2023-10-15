@@ -69,7 +69,7 @@
     </div>
 </form>
 
-<div>
+{{-- <div>
     <form wire:submit.prevent="addElement">
         <input type="text" wire:model="newElement" placeholder="New Element">
         <button type="submit">Add</button>
@@ -84,4 +84,4 @@
             <li>{{ $card }}</li>
         @endforeach
     </ul>
-</div>
+</div> --}}
