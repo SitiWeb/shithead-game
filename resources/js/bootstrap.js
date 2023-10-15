@@ -24,15 +24,13 @@ window.Echo = new Echo({
     broadcaster: 'pusher',
     key: '200a2bcde647700b50b3',
     wsHost: window.location.hostname,
-
-    forceTLS: false,
     encrypted: true,
     cluster: 'eu',
 });
-console.log('test');
-// window.Echo.channel("game." + gameData.id)
-//     .listen('GameUpdate', (e) => {
-//         // Handle the received event data (e.message)
-//         console.log(e.game);
-//         // Update your UI with the new message
-});
+
+window.Echo.channel("game." + gameData.id)
+    .listen('GameUpdate', (e) => {
+        // Handle the received event data (e.message)
+        console.log(e.game);
+        // Update your UI with the new message
+    });
