@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 use Pusher\Pusher;
 use App\Events\GameUpdate;
-use App\models\Game;
-use App\models\Card;
+use App\Models\Game;
 use Auth;
-use App\models\GamePlayer;
+use App\Models\GamePlayer;
 //use App\models\Card; // Assuming you have a Card model
 
 use Illuminate\Http\Request;
