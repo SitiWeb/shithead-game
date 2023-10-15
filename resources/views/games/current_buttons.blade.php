@@ -31,7 +31,7 @@
             var xhr = new XMLHttpRequest();
 
             // Configure the AJAX request
-            xhr.open("POST", "/shithead-game/public/games/4/action", true); // Replace with your actual endpoint URL
+            xhr.open("POST", "{{env('APP_URL')}}/games/4/action", true); // Replace with your actual endpoint URL
             xhr.setRequestHeader("X-CSRF-TOKEN", "{{ csrf_token() }}"); // Add CSRF token if required
 
             // Define a callback function to handle the AJAX response
