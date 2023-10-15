@@ -1,0 +1,21 @@
+// Fonts
+@import url('https://fonts.bunny.net/css?family=Nunito');
+// Variables
+@import 'variables';
+// Bootstrap
+@import 'bootstrap/scss/bootstrap';
+.card-ratio {
+    aspect-ratio: 3/4;
+    min-width: 50px;
+}
+
+.closed-card {
+    background-color: #e5e5f7;
+    opacity: 0.8;
+    background-image: radial-gradient(circle at center center, #444cf7, #e5e5f7), repeating-radial-gradient(circle at center center, #444cf7, #444cf7, 10px, transparent 20px, transparent 10px);
+    background-blend-mode: multiply;
+}
+
+.pile .card {
+    max-width: 150px;
+}
