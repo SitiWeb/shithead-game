@@ -34,6 +34,7 @@ export default {
       loading: true, // Add a loading indicator
       count_hand: 0,
       count_closed: 0,
+      apiUrl: window.appUrl ,
     };
   },
   mounted() {
@@ -65,7 +66,7 @@ export default {
     fetchCardData() {
       // Fetch initial card data from your Laravel backend
       axios
-        .get(`http://localhost/shithead-game/public/games/${this.game}/data`)
+        .get(`${this.apiUrl}/games/${this.game}/data`)
         .then((response) => {
   
     var cardData = response.data.players[this.player];

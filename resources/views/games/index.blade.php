@@ -8,6 +8,11 @@
     <div class="container py-5">
         <div class="row">
             <div class="col">
+                <a class="btn btn-danger mb-4" href="{{ route('logout') }}"
+                                       onclick="event.preventDefault();
+                                                     document.getElementById('logout-form').submit();">
+                                        {{ __('Logout') }}
+                                    </a>
                 <h1>Available Games</h1>
                 <table class="table table-dark">
 

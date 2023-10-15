@@ -20,6 +20,7 @@ export default {
         visible: true,
         card: {},
         cards: {},
+        apiUrl: window.appUrl ,
     };
   },
   mounted() {
@@ -74,7 +75,7 @@ export default {
     fetchCardData() {
       // Fetch initial card data from your Laravel backend
       axios
-        .get(`http://localhost/shithead-game/public/games/${this.game}/data`)
+        .get(`${this.apiUrl}/games/${this.game}/data`)
         .then((response) => {
           this.card = response.data.cards[0];        
           var filteredCards =  response.data.cards.filter(function(card) {

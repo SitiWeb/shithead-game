@@ -44,11 +44,6 @@ $(document).ready(function() {
 });
 
 
-
-
-
-document.addEventListener('DOMContentLoaded', handCards);
-
 $(document).ready(function() {
     $("#createLobbyForm").on("submit", function(event) {
         event.preventDefault(); // Prevent the default form submission.
