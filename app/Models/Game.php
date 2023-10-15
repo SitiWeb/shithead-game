@@ -167,8 +167,8 @@ class Game extends Model
      */
     public function playCard( $playerId, $played_card, $type)
     {
-        event(new GameUpdate($this));
-        return;
+        
+       
         $player = $this->players()->where('id' , $playerId)->first();
         $card = $this->cards()->where('id' , $played_card)->first();
         // Validate if the move is valid (e.g., based on rank and suit matching)
@@ -193,7 +193,7 @@ class Game extends Model
             $this->save();
             
         }
-
+        event(new GameUpdate($this));
         if($player->cards()->count() === 0){
             $this->endGame();
         }
