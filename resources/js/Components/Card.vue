@@ -1,12 +1,12 @@
 <template>
-  <div class="">
+  <div class="draggable-item">
     
     <label :for="'card-' + card.id" class="animated-div">
     <input
       class="animate-checkbox"
       type="checkbox"
       :style="'width:0;opacity:0;'"
-      :name="'card['+card.card_type+']'"  
+      :name="'card['+card.card_type+'][]'"  
       :value="card.id"        
       :id="'card-' + card.id" 
     />

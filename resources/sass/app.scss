@@ -10,7 +10,11 @@
     max-width: 100px;
 }
 
-.closed-card {
+.closed .card {
+    padding: 5%;
+}
+
+.closed .card-body {
     background-color: #e5e5f7;
     opacity: 0.8;
     background-image: radial-gradient(circle at center center, #444cf7, #e5e5f7), repeating-radial-gradient(circle at center center, #444cf7, #444cf7, 10px, transparent 20px, transparent 10px);
@@ -19,4 +23,11 @@
 
 .pile .card {
     max-width: 150px;
+}
+
+body {
+    background-color: #2e8708;
+    opacity: 0.8;
+    background: radial-gradient(circle, transparent 20%, #2e8708 20%, #2e8708 80%, transparent 80%, transparent), radial-gradient(circle, transparent 20%, #2e8708 20%, #2e8708 80%, transparent 80%, transparent) 30px 30px, linear-gradient(#104005 2.4000000000000004px, transparent 2.4000000000000004px) 0 -1.2000000000000002px, linear-gradient(90deg, #104005 2.4000000000000004px, #2e8708 2.4000000000000004px) -1.2000000000000002px 0;
+    background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
 }

@@ -16,11 +16,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
+    <script>
+        // Define a global JavaScript variable to hold the app URL
+        window.appUrl = "{{ config('app.url') }}";
+    </script>
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/Draggable.min.js"></script>
+
+    
   <!-- Include Bootstrap CSS and JavaScript (ensure you have Bootstrap properly set up) -->
 
 
@@ -46,7 +53,7 @@
         <div id="notification-container" class="toast-container"></div>
     </div>
     <div id="app" class="min-vh-100">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+        {{-- <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
@@ -98,7 +105,7 @@
                     </ul>
                 </div>
             </div>
-        </nav>
+        </nav> --}}
         <!-- HTML: Create a container for notifications in the top right corner -->
       
   
@@ -144,6 +151,7 @@
 
     
 </script>
+@isset($game)
 
 <script>
     // Wait for the DOM to be ready
@@ -173,7 +181,15 @@ document.addEventListener("DOMContentLoaded", function () {
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
           // Handle the AJAX response here
-       
+          var responseData = JSON.parse(xhr.responseText);
+            console.log(responseData);
+            if (responseData.status == 'success'){
+                showToast(responseData.message,'success', { delay: 3000 });
+            }
+            else if(responseData.status == 'error'){
+                showToast(responseData.message, 'danger',{ delay: 3000 });
+            }
+
         }
       };
 
@@ -182,30 +198,91 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+function handCards() {
+
+var cardsholders = document.querySelectorAll('.draggable-item+.hand');
+cardsholders.forEach(elements => {
+
+    var cards = elements.querySelectorAll('.card');
+    var cardCount = cards.length;
+    var diff = 20 / (cardCount - 1);
+    var start = -10;
+    cards.forEach(element => {
+        element.style.transform = 'skew(' + -start + 'deg, ' + start + 'deg)';
+        start = start + diff;
+
+    });
+})
+}
+
+
+
+// Create a function to make items draggable and define the action
+function makeItemsDraggable() {
+    var items = document.querySelectorAll('.draggable-item');
+  items.forEach((item) => {
+    const id = item.id;
+
+    // Make the item draggable
+    const draggable = Draggable.create(item, {
+      type: 'x,y',
+      edgeResistance: 0.65,
+      bounds: window, // Bound within the window
+      onDragEnd: function () {
+        // Check if the item has been dragged more than 100 pixels on the Y-axis
+        if (this.y < -150) {
+            var cardId = $(this.target.children[0]).attr('for');
+            var card = $('label[for="'+cardId+ '"] .card');
+            $("#"+cardId).prop("checked", true);
+          // Perform your action here, e.g., change the background color
+          
+          gsap.to(card, { backgroundColor: 'yellow', duration: 0.2 });
+        } else {
+            var cardId = $(this.target.children[0]).attr('for');
+            var card = $('label[for="'+cardId+ '"] .card');
+            $("#"+cardId).prop("checked", false);
+          // Reset the background color if the item is dragged back
+          gsap.to(card, { backgroundColor: 'white', duration: 0.2 });
+        }
+      },
+    });
+  });
+}
+
+// Get all draggable items by class name
+
+
+// Call the function to make items draggable and define the action
+function showToast(message, type, options) {
+    const toastContainer = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast bg-${type} text-white`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    if (options && options.delay) {
+        toast.setAttribute('data-delay', options.delay);
+    }
+    const toastContent = document.createElement('div');
+    toastContent.className = 'toast-body';
+    toastContent.textContent = message;
+    toast.appendChild(toastContent);
+    toastContainer.appendChild(toast);
+    const toastInstance = new bootstrap.Toast(toast);
+    toastInstance.show();
+}
+
+function handleCheck(data){
+    console.log(data.current_turn);
+    if (data.current_turn){
+        jQuery('.user-checks').hide()
+        jQuery('#check-'+data.current_turn).show()
+    }
+    
+    console.log();
+}
 
 </script>
-
-<script>
-    function handCards(){
-      
-        var cardsholders = document.querySelectorAll('.card-holder');
-        cardsholders.forEach(elements => {
-            
-            var cards = elements.querySelectorAll('.card');
-            var cardCount = cards.length;
-            var diff = 20 / (cardCount - 1);
-            var start = -10;
-            cards.forEach(element => {
-                element.style.transform = 'skew('+ -start +'deg, '+ start +'deg)';
-                start = start + diff;
-            
-            });
-        })
-        
-    }
-    document.addEventListener('DOMContentLoaded', handCards);
-    
-    
-    </script>
+@endisset
 </body>
 </html>

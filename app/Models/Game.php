@@ -165,22 +165,22 @@ class Game extends Model
      * @param array $playedCardData The card data representing the played card.
      * @return bool True if the card was played successfully, false otherwise.
      */
-    public function playCard( $playerId, $played_card, $type)
+    public function playCard( $playerId, $played_cards, $type)
     {
         
        
         $player = $this->players()->where('id' , $playerId)->first();
-        $card = $this->cards()->where('id' , $played_card)->first();
         
+       
+      
         // Validate if the move is valid (e.g., based on rank and suit matching)
-        $result = $this->validateMove($player, $card, $type);
+        $result = $this->validateMove($player, $played_cards, $type);
         if (is_array($result) && isset($result['status']) && $result['status'] == 'error') {
-            dd('Failed validation');
             return $result; // The move is not valid
         }
         
         // Move the played card from the player's hand to the discard pile
-        $this->moveCardToDiscard($player, $card);
+        $this->moveCardToDiscard($player, $result['cards']);
 
         
 
@@ -286,12 +286,14 @@ class Game extends Model
      * @param GamePlayer $player The player who is playing the card.
      * @param array $cardData The card data representing the played card.
      */
-    private function moveCardToDiscard(GamePlayer $player, $card)
+    private function moveCardToDiscard(GamePlayer $player, $cards)
     {
-        
-
-        if ($card) {
-            $card->update(['card_type' => 'pile', 'game_player_id' => null, 'played_at' => date('Y-m-d H:i:s')]);
+        foreach ($cards as $card) {
+            $card->update([
+                'card_type' => 'pile',
+                'game_player_id' => null,
+                'played_at' => now(), // Use the `now()` function to get the current timestamp
+            ]);
         }
         
     }
@@ -350,7 +352,7 @@ class Game extends Model
     }
 
 
-    public function validateMove( $player, $card, $type)
+    public function validateMove( $player, $cards, $type)
     {
         
         // Check if it's the player's turn
@@ -360,24 +362,28 @@ class Game extends Model
         }
         
         // Check if the player has the card they are trying to play
-        if (!$player->hasCard($card, $type)) {
-
+        $cards = $player->hasCard($cards, $type);
+        if (!$cards) {
+            
             return ['status'=> 'error','message' => 'hasCard', 'game_id' => $this->id];
         }
+      
+
 
         // Check if the played card matches the rank or suit of the top discard card
-        if (!$this->isValidCard($card)) {
-            if ($type == 'closed'){
-                $card->card_type = 'hand';
-                $card->save();
-                return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id];
-            }
+        $result = $this->isValidCard($cards);
+        if ($result['status'] == 'error') {
+            // if ($type == 'closed'){
+            //     $card->card_type = 'hand';
+            //     $card->save();
+            //     return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id];
+            // }
       
-            return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id];
+            return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id, 'data' => $result];
         }
 
         // If all checks pass, the move is valid
-        return true;
+        return ['status'=>'success','message'=>'Validated move', 'cards' => $cards];
     }
 
     /**
@@ -491,12 +497,33 @@ class Game extends Model
      * @param array|null $topDiscardCardData The card data representing the top discard card, or null if the pile is empty.
      * @return bool True if the move is valid, false otherwise.
      */
-    private function isValidCard($card)
+    private function isValidCard($cards)
     {
+        $current_number = '';
+        $played_card = false;
+        foreach($cards as $card){
+            $suit = $card->card_suit;
+            $rank = $this->convert_rank($card->card_rank);
+            if ($rank == 3){
+                if(!$played_card){
+                    $played_card = $card;
+                }
+                continue;
+            }
+            $played_card = $card;
+            if (empty($current_number)){
+                $current_number = $rank;
+            }
+            
+            if ($rank != $current_number){
+                return ['status'=>'error','message'=>'You cant play this combination of cards', 'rank' => $rank , 'current_number'=> $current_number];
+            }
+        }
+        
         $topCard = $this->getTopCard();
         // If the discard pile is empty, any card can be played
         if ($topCard === null) {
-            return true;
+            return ['status'=>'success','message'=>'No top card'];
         }
 
         // Extract the rank and suit of the played card and the top discard card
@@ -505,28 +532,28 @@ class Game extends Model
         $topDiscardCardRank =  $this->convert_rank($topCard->card_rank);
 
         if ($playedCardRank == 2){
-            return true;
+            return ['status'=>'success','message'=>'start from the beginning'];
         } 
 
         if ($playedCardRank == 3){
-            return true;
+            return ['status'=>'success','message'=>'Joker'];
         }
  
         if ($playedCardRank == 10){
-            return true;
+            return ['status'=>'success','message'=>'10 haalt de pot weg'];
         }
 
         // Check if the played card's rank matches the top discard card's rank
         // or if the played card's suit matches the top discard card's suit
         if ($topDiscardCardRank!= 7 && $playedCardRank >= $topDiscardCardRank) {
-            return true; // The move is valid
+            return ['status'=>'success','message'=>'Zelfde of hoger'];
         }
         if ($topDiscardCardRank == 7 && $playedCardRank <= $topDiscardCardRank) {
-            return true; // The move is valid
+            return ['status'=>'success','message'=>'Zelfde of lager'];
         }
      
        
-        return false; // The move is not valid
+        return ['status'=>'error','message'=>'Not a valid move'];
     }
 
     /**

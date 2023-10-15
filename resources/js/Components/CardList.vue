@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex gap-1 card-holder  flex-wrap">
+  <div class="d-flex gap-1 card-holder justify-content-center flex-wrap"  :class="cardType">
     <Card v-for="card in cardData" :key="card.id" :card="card" :visible="shouldDisplayCard" />
   </div>
 </template>
@@ -30,6 +30,8 @@ export default {
     return {
       cardData: [], // Initialize cardData as an empty array
       loading: true, // Add a loading indicator
+      apiUrl: window.appUrl ,
+      cardType: '',
     };
   },
   mounted() {
@@ -39,10 +41,14 @@ export default {
     // Listen for updates from the WebSocket channel
     Echo.channel('game.' + this.game).listen('GameUpdate', (data) => {
       this.cardData = data.players[this.player][this.type];
+      this.cardType = this.type
       this.loading = false; // Set loading to false when data is loaded
+      
       // Add click event listeners to each checkbox
       set_events();
       handCards();
+      handleCheck(data.game);
+      
    
     });
   },
@@ -50,14 +56,15 @@ export default {
     fetchCardData() {
       // Fetch initial card data from your Laravel backend
       axios
-        .get(`http://localhost/shithead-game/public/games/${this.game}/data`)
+        .get(`${this.apiUrl}/games/${this.game}/data`)
         .then((response) => {
 
           this.cardData = response.data.players[this.player][this.type];
-
+        this.cardType = this.type
           this.loading = false; // Set loading to false when data is loaded
           set_events();
           handCards();
+          handleCheck(response.data.game);
         })
         .catch((error) => {
           console.error('Error fetching data:', error);

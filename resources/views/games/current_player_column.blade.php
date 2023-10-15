@@ -11,11 +11,17 @@
                 @endif
                 
                 <div>
-                <div class="user-name">
+                <div class="user-name d-flex gap-3 justify-content-center">
+                    <div>
                     {{ $player->user->name }}
-                    @if ($player->is_ready)
-                    <i class="fa-solid fa-check"></i>
-                    @endif
+                    </div>
+                        <div>
+                        <div class="user-checks" id="check-{{$player->id}}" style="display:block">
+                     
+                        <i class="fa-solid fa-check"></i>
+              
+                        </div>
+                </div>
                     <input type="hidden" name="_token" value="{{ csrf_token() }}" />
                     <input type="hidden" name="player" value="{{ $player->id }}" />
                 </div>

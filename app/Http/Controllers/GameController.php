@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use Pusher\Pusher;
+use Illuminate\Support\Facades\Validator;
 use App\Events\GameUpdate;
 use App\Models\Game;
 use Auth;
@@ -36,19 +37,69 @@ class GameController extends Controller
             
         }
    
-        return response()->json(['message' => 'Game created successfully', 'game' => $game, 'cards' => $cards, 'players' => $players_array]);
+        return response()->json(['message' => 'Game Data', 'game' => $game, 'cards' => $cards, 'players' => $players_array]);
     }
+
+    public function lobbyData()
+    {
+        $availableGames = Game::where('status', 'created')
+            ->orWhere('status', 'LIKE', 'starting%')
+            ->with('players') // Load the related players
+            ->get();
+        return response()->json(['message' => 'Lobby Data', 'lobby' => $availableGames]);
+    }
+
+    public function leaveGame(Game $game)
+    {
+        // Find and update records where player_id is equal to 6
+        $player = $game->players->where('user_id', Auth::user()->id)->first();
+        $success = false;
+        if ($player) {
+            $player->user_id = null;
+            $player->save();
+            $success = true;
+            
+        }
+
+        
+        if ($success){
+            if ($game->players->whereNotNull('user_id')->count() == 0){
+                $game->status = 'aborted';
+                $game->save();
+            }
+            return response()->json(['status' => 'success', 'message' => 'Succesfully left lobby']);
+        }
+        if ($game->players->whereNotNull('user_id')->count() == 0){
+            $game->status = 'aborted';
+            $game->save();
+            return response()->json(['status' => 'error', 'message' => 'Deleted room']);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Failed to leave lobby']);
+   
+       
+    }
+
+
     /**
      * Create a new game instance and initialize players.
      */
     public function createGame(Request $request)
     {
         // Validate and sanitize the input data from the request (e.g., number of players)
+         // Validate the input data
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255', // You can adjust the validation rules as needed
+            'num_players' => 'required|integer|min:2|max:4', // Example rules for the number of players
+        ]);
 
+        // Check if validation fails
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => implode(", ",$validator->errors()->all())]);
+        }
         // Create a new game instance
         $game = new Game();
         $game->status = 'created'; // Set the initial game status (you can use your own status definitions)
-        $game->name = 'tmp';
+        $game->name = $request->input('name');
         // Associate the game with the current user
         $game->created_by = Auth::user()->id;
         // Save the game to the database
@@ -70,11 +121,12 @@ class GameController extends Controller
 
         // Optionally, set up additional game-specific initialization logic here
 
-        return response()->json(['message' => 'Game created successfully', 'game_id' => $game->id]);
+        return response()->json(['status'=> 'success','message' => 'Game created successfully', 'game_id' => $game->id]);
     }
 
     public function joinGame(Game $game)
     {
+      
         $players = $game->players; // This will retrieve the players related to the game.
 
         // Now you can work with the $players collection.
@@ -82,7 +134,7 @@ class GameController extends Controller
         $user_id = Auth::user()->id;
         foreach ($players as $player){
             if ($player->user_id == $user_id){
-                return response()->json(['message' => 'You are already in this lobby', 'game_id' => $game->id]);
+                return response()->json(['status'=> 'error','message' => 'You are already in this lobby', 'game_id' => $game->id]);
             }
 
             if ($player->user_id){
@@ -99,9 +151,9 @@ class GameController extends Controller
         if ($can_join){
             $spot->user_id = $user_id;
             $spot->save();
-            return response()->json(['message' => 'You joined this lobby', 'game_id' => $game->id]);
+            return response()->json(['status'=> 'success','message' => 'You joined this lobby', 'game_id' => $game->id]);
         }
-        return response()->json(['message' => 'Failed to join lobby', 'game_id' => $game->id]);
+        return response()->json(['status'=> 'error','message' => 'Failed to join lobby', 'game_id' => $game->id]);
     }
 
     public function showLobby(Game $game){
@@ -134,9 +186,10 @@ class GameController extends Controller
                 case 'switch':
                     return $this->switch($request, $game);
                 case 'ready':
+                    
                     return $this->ready($request, $game);
                 case 'play_card':
-                    
+             
                     if ($request->has('card.hand') && $request->has('player')){
                         return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.hand'), 'hand'));
                     }elseif($request->has('card.closed') && $request->has('player')){
@@ -145,44 +198,17 @@ class GameController extends Controller
                     elseif($request->has('card.open') && $request->has('player')){
                         return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.open'), 'open'));
                     }
-                    return response()->json(['message' => 'Missing a parameter', 'game_id' => $game->id]);
-                case 'draw_pile':
-                    if($this->DrawPile($request, $game)){
-                        event(new GameUpdate($game));
-                        return response()->json(['status'=>'success','message' => 'Drap pile', 'game_id' => $game->id]);
-                    }
                     return response()->json(['status'=>'error','message' => 'Missing a parameter', 'game_id' => $game->id]);
-                    
-                    
-
+                case 'draw_pile':
+                    $result = $this->DrawPile($request, $game);
+                    if($result['status'] ==  'success'){
+                        event(new GameUpdate($game));
+                        return response()->json($result);
+                    }
+                    return response()->json($result);
                 case 'send_update':
-                    
-                    return event(new GameUpdate($game));
-                    return 'oke';
-                    
-                    // // New Pusher instance with our config data
-                    // $pusher = new Pusher(
-                    //     config('broadcasting.connections.pusher.key'),
-                    //     config('broadcasting.connections.pusher.secret'),
-                    //     config('broadcasting.connections.pusher.app_id'),
-                    //     config('broadcasting.connections.pusher.options')
-                    // );
-                        
-                    // // Enable pusher logging - I used an anonymous class and the Monolog
-                    // // $pusher->set_logger(new class {
-                    // //     public function log($msg)
-                    // //     {
-                    // //             \Log::info($msg);
-                    // //     }
-                    // // });
-                        
-                    // // Your data that you would like to send to Pusher
-                    // $data = ['text' => 'hello world from Laravel 5.3'];
-                        
-                    // // Sending the data to channel: "test_channel" with "my_event" event
-                    // $pusher->trigger( 'game.4', 'GameUpdate', $data);
-                        
-                    // return 'ok'; 
+                    event(new GameUpdate($game));
+                    return response()->json(['status'=>'success','message' => 'Sent an update to all players', 'game_id' => $game->id]);
                 default:
                     return response()->json(['message' => 'Unknown or Missing action', 'game_id' => $game->id]);
             }
@@ -195,13 +221,15 @@ class GameController extends Controller
             $player = GamePlayer::where('id',$request->input('player'))->first();
             if ($player){
                 
-                $player->takePile();
-                $game = $player->game()->first();
-                $game->current_turn = $game->nextPlayer();
-                $game->save();
+                if($player->takePile()){
+                    $game = $player->game()->first();
+                    $game->current_turn = $game->nextPlayer();
+                    $game->save();
+                    return ['status' => 'success', 'message' => 'Succesfully drew pile'];
+                }
+                return ['status' => 'error', 'message' => 'There is no pile to take'];
             }
-            return  redirect()->route('games.show', ['game' => $game ]);
-
+            return ['status' => 'error', 'message' => 'Player not found'];
         }
     }
 
@@ -218,9 +246,11 @@ class GameController extends Controller
                 if ($is_ready){
                     $game->status = 'in_progress';
                     $game->save();
+                    return ['status' => 'success', 'message' => 'Everyone is ready, starting game'];
                 }
-                return  redirect()->route('games.show', ['game' => $game ]);
+                return ['status' => 'success', 'message' => 'Set status to is ready'];
             }
+            return ['status' => 'error', 'message' => 'Failed to set status to ready'];
         }
     }
 

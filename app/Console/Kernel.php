@@ -7,12 +7,18 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
+    protected $commands = [
+        // ...
+        \App\Console\Commands\UpdateGameStatus::class,
+    ];
     /**
      * Define the application's command schedule.
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+       // Run the command every hour
+        $schedule->command('games:update-status')->hourly();
+        
     }
 
     /**
@@ -21,7 +27,7 @@ class Kernel extends ConsoleKernel
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
-
+        
         require base_path('routes/console.php');
     }
 }

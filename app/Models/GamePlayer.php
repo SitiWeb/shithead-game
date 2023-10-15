@@ -69,11 +69,15 @@ class GamePlayer extends Model
         }
     }
 
-    public function hasCard($card_data, $type){
-        foreach( $this->cards()->where('card_type',$type)->get() as $card){     
-            if ($card == $card_data){
-                return True;
-            }
+    public function hasCard($cards_data, $type){
+        
+        $cards = $this->cards()
+    ->whereIn('id', $cards_data)
+    ->where('game_player_id', $this->id)
+    ->where('card_type', $type)
+    ->get();
+        if (count($cards_data) == count($cards)){
+            return $cards;
         }
         return False;
     }

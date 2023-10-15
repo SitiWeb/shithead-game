@@ -1,25 +1,16 @@
 <template>
-  <div>
-   
-      <div class="card text-center card-ratio">
-        <div class="card-body p-0">
-          <div v-if="visible"  class="card-number" >
-            <span class="card-icon">{{ suitIcon(card.card_suit) }}</span>
-            <span class="card-value">{{ rankValue(card.card_rank) }}</span>
-          </div>
-        </div>
-      </div>
-
+  <div class="d-flex gap-1 flex-wrap">
+    <Card v-for="card in cards" :key="card.id" :card="card" :visible="true" />
   </div>
 </template>
 
 <script>
 import axios from "axios";
-
+import Card from './Card.vue'; // Adjust the import path as needed
 export default {
   props: {
     game: {
-      type: Number,
+      type: String,
       required: true,
     },
     
@@ -28,6 +19,7 @@ export default {
     return {
         visible: true,
         card: {},
+        cards: {},
     };
   },
   mounted() {
@@ -37,8 +29,15 @@ export default {
     // Listen for updates from the WebSocket channel
     Echo.channel('game.' + this.game).listen('GameUpdate', (data) => {
       // Assuming data contains the new card information
-
+      console.log(data);
       this.card = data.cards[0];
+      // Use the filter method to keep only rows with card type "pile"
+      var filteredCards =  data.cards.filter(function(card) {
+          return card.card_type === "pile";
+      });
+      var limitedCards = filteredCards.slice(0, 4);
+      this.cards = limitedCards;
+   
       this.loading = false; // Set loading to false when data is loaded
     });
   },
@@ -77,19 +76,14 @@ export default {
       axios
         .get(`http://localhost/shithead-game/public/games/${this.game}/data`)
         .then((response) => {
-           if (response.data.cards[0] != null){
-            if (response.data.cards[0].card_type == 'pile'){
-              this.card = response.data.cards[0];
-              
-            }else{
-              this.card = [];
-            }
-            
-           }else{
-
-           }
+          this.card = response.data.cards[0];        
+          var filteredCards =  response.data.cards.filter(function(card) {
+            return card.card_type === "pile";
+          });
           
-
+          
+          var limitedCards = filteredCards.slice(0, 4);
+          this.cards = limitedCards;
           this.loading = false; // Set loading to false when data is loaded
         })
         .catch((error) => {
@@ -101,7 +95,7 @@ export default {
   
 
   components: {
-    // Card, // You don't need to import the Card component here unless it's used
+     Card, // You don't need to import the Card component here unless it's used
   },
 };
 </script>

@@ -11,7 +11,11 @@
             @include('games.pile')
         </div>
         <div class="col-3">
-            @include('games.debug')
+            <div class="position-fixed top-0 right-0 p-3" style="z-index: 11; width:300px;">
+                <div id="toast-container" class="toast-container">
+                </div>
+            </div>
+            {{-- @include('games.debug') --}}
         </div>
     </div>
     <div class="row" style="flex-grow:1;">
