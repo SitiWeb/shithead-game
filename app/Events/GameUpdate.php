@@ -14,18 +14,31 @@ use Illuminate\Queue\SerializesModels;
 class GameUpdate implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    /**
-     * The order instance.
+     /**
+     * The game instance.
      *
      * @var \App\Game
      */
     public $game;
+
+    /**
+     * The cards related to the game.
+     *
+     * @var array
+     */
+    public $cards;
+
     /**
      * Create a new event instance.
+     *
+     * @param \App\Game $game
+     * @param array $cards
      */
     public function __construct($game)
     {
         $this->game = $game;
+        $this->cards = $this->game->cards()->select('id', 'card_rank', 'card_type', 'card_suit')->get();
+       
     }
 
     /**
@@ -37,5 +50,18 @@ class GameUpdate implements ShouldBroadcastNow
     {
    
         return new Channel('game.'.$this->game->id);
+    }
+
+    /**
+     * Get the data to broadcast.
+     *
+     * @return array
+     */
+    public function broadcastWith()
+    {
+        return [
+            'game' => $this->game,
+            'cards' => $this->cards,
+        ];
     }
 }
