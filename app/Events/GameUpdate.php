@@ -36,7 +36,7 @@ class GameUpdate implements ShouldBroadcastNow
      */
     public function __construct($game)
     {
-        $game->cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit')->get()->toArray();
+        $game->cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit', 'game_player_id')->orderBy('played_at')->get()->toArray();
         $this->game = $game;
         $this->cards = $game->cards;
     }
