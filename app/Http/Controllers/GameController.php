@@ -133,7 +133,7 @@ class GameController extends Controller
                     return $this->DrawPile($request, $game);
 
                 case 'send_update':
-                    event(new GameUpdate($game))    ;
+                    return event(new GameUpdate($game))    ;
                     return 'oke';
                     
                     // // New Pusher instance with our config data
