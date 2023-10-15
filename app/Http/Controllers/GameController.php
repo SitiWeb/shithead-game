@@ -133,30 +133,30 @@ class GameController extends Controller
                     return $this->DrawPile($request, $game);
 
                 case 'send_update':
-                    
-                    // New Pusher instance with our config data
-                    $pusher = new Pusher(
-                        config('broadcasting.connections.pusher.key'),
-                        config('broadcasting.connections.pusher.secret'),
-                        config('broadcasting.connections.pusher.app_id'),
-                        config('broadcasting.connections.pusher.options')
-                    );
+                    event(new GameUpdate($game))    ;
+                    // // New Pusher instance with our config data
+                    // $pusher = new Pusher(
+                    //     config('broadcasting.connections.pusher.key'),
+                    //     config('broadcasting.connections.pusher.secret'),
+                    //     config('broadcasting.connections.pusher.app_id'),
+                    //     config('broadcasting.connections.pusher.options')
+                    // );
                         
-                    // Enable pusher logging - I used an anonymous class and the Monolog
-                    // $pusher->set_logger(new class {
-                    //     public function log($msg)
-                    //     {
-                    //             \Log::info($msg);
-                    //     }
-                    // });
+                    // // Enable pusher logging - I used an anonymous class and the Monolog
+                    // // $pusher->set_logger(new class {
+                    // //     public function log($msg)
+                    // //     {
+                    // //             \Log::info($msg);
+                    // //     }
+                    // // });
                         
-                    // Your data that you would like to send to Pusher
-                    $data = ['text' => 'hello world from Laravel 5.3'];
+                    // // Your data that you would like to send to Pusher
+                    // $data = ['text' => 'hello world from Laravel 5.3'];
                         
-                    // Sending the data to channel: "test_channel" with "my_event" event
-                    $pusher->trigger( 'game.4', 'GameUpdate', $data);
+                    // // Sending the data to channel: "test_channel" with "my_event" event
+                    // $pusher->trigger( 'game.4', 'GameUpdate', $data);
                         
-                    return 'ok'; 
+                    // return 'ok'; 
                 default:
                     return response()->json(['message' => 'Unknown or Missing action', 'game_id' => $game->id]);
             }

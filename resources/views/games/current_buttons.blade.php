@@ -14,9 +14,10 @@
         // Find the form and button by their IDs or other attributes
         var form = document.getElementById("myForm");
         var button = form.querySelector('button[name="action"][value="send_update"]');
-
-        // Attach a click event listener to the button
-        button.addEventListener("click", function (event) {
+        console.log(typeof(button));
+        if (button != undefined){
+            // Attach a click event listener to the button
+            button.addEventListener("click", function (event) {
             // Prevent the form from submitting via traditional means
             event.preventDefault();
             
@@ -44,6 +45,8 @@
             // Send the AJAX request with the serialized form data
             xhr.send(formData);
         });
+        }
+        
     });
 </script>
 
