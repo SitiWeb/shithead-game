@@ -22,45 +22,22 @@
                 @php
                     $cards = $player->cards()->get();
                 @endphp
-                <div class="open-cards d-flex gap-1 ">
-                    @foreach ($cards as $card)
-                        @if ($card->card_type != 'open')
-                            @continue
-                        @endif
-                        <input type="checkbox" style="" name="card[open]" value="{{ $card->id }}"
-                            id="card-{{ $card->id }}" />
-                        <label for="card-{{ $card->id }}">
-                            @include('games.card')
-                        </label>
-                    @endforeach
+                <div class="open-cards">
+                    <div id="app">
+                        <card-list player="{{$player->id}}" type="open" game="{{$game->id}}" :should-display-card="true"></card-list>
+                    </div>
                 </div>
 
-                <div class="closed-cards d-flex gap-1">
-                    @foreach ($cards as $card)
-                        @if ($card->card_type != 'closed')
-                            @continue
-                        @endif
-                        <input type="checkbox" style="" name="card[closed]" value="{{ $card->id }}"
-                            id="card-{{ $card->id }}" />
-                        <label for="card-{{ $card->id }}">
-                            @include('games.card_closed')
-                        </label>
-                    @endforeach
+                <div class="closed-cards">
+                    <div id="app">
+                        <card-list player="{{$player->id}}" type="closed" game="{{$game->id}}" :should-display-card="false"></card-list>
+                    </div>
                 </div>
 
-                <div class="hand-cards d-flex gap-1 card-holder">
-                    @foreach ($cards as $card)
-                        @if ($card->card_type != 'hand')
-                            @continue
-                        @endif
-                        @livewire('player-cards', ['card' => $card])
-                        {{-- <input type="checkbox" style="" name="card[hand]" value="{{ $card->id }}"
-                            id="card-{{ $card->id }}" />
-                        <label for="card-{{ $card->id }}">
-                            @include('games.card')
-                        </label> --}}
-                    @endforeach
+                <div id="app">
+                    <card-list  player="{{$player->id}}" type="hand" game="{{$game->id}}" :should-display-card="true"></card-list>
                 </div>
+                
             </div>
         </div>
         @endforeach
@@ -69,19 +46,3 @@
     </div>
 </form>
 
-{{-- <div>
-    <form wire:submit.prevent="addElement">
-        <input type="text" wire:model="newElement" placeholder="New Element">
-        <button type="submit">Add</button>
-    </form>
-
-    <ul>
-        @foreach($cards as $card)
-           
-            @if ($card->card_type != 'hand')
-                @continue
-            @endif
-            <li>{{ $card }}</li>
-        @endforeach
-    </ul>
-</div> --}}

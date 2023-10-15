@@ -23,6 +23,21 @@ class GameController extends Controller
         // Pass the list of games to a view and render the lobby page
         return view('games.index', ['games' => $availableGames]);
     }
+
+    public function gameData(Game $game)
+    {
+        $cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit', 'game_player_id')->where('game_player_id',null)->orderBy('played_at','desc')->get();
+        $players = $game->players()->with('cards')->get();
+        $players_array = [];
+        foreach($players as $player){
+            foreach($player->cards as $card){
+                $players_array[$player->id][$card->card_type][] = $card;
+            }
+            
+        }
+   
+        return response()->json(['message' => 'Game created successfully', 'game' => $game, 'cards' => $cards, 'players' => $players_array]);
+    }
     /**
      * Create a new game instance and initialize players.
      */
@@ -113,6 +128,7 @@ class GameController extends Controller
     }
 
     public function action(Request $request, Game $game){
+  
         if ($request->has('action')){
             switch($request->input('action')){
                 case 'switch':
@@ -120,20 +136,28 @@ class GameController extends Controller
                 case 'ready':
                     return $this->ready($request, $game);
                 case 'play_card':
+                    
                     if ($request->has('card.hand') && $request->has('player')){
-                        return $this->playCard($request, $game, $request->input('player'), $request->input('card.hand'), 'hand');
+                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.hand'), 'hand'));
                     }elseif($request->has('card.closed') && $request->has('player')){
-                        return $this->playCard($request, $game, $request->input('player'), $request->input('card.closed'), 'closed');
+                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.closed'), 'closed'));
                     }
                     elseif($request->has('card.open') && $request->has('player')){
-                        return $this->playCard($request, $game, $request->input('player'), $request->input('card.open'), 'open');
+                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.open'), 'open'));
                     }
                     return response()->json(['message' => 'Missing a parameter', 'game_id' => $game->id]);
                 case 'draw_pile':
-                    return $this->DrawPile($request, $game);
+                    if($this->DrawPile($request, $game)){
+                        event(new GameUpdate($game));
+                        return response()->json(['status'=>'success','message' => 'Drap pile', 'game_id' => $game->id]);
+                    }
+                    return response()->json(['status'=>'error','message' => 'Missing a parameter', 'game_id' => $game->id]);
+                    
+                    
 
                 case 'send_update':
-                    return event(new GameUpdate($game))    ;
+                    
+                    return event(new GameUpdate($game));
                     return 'oke';
                     
                     // // New Pusher instance with our config data
@@ -204,22 +228,22 @@ class GameController extends Controller
 
          // Check if the request has both keys "card[open]" and "card[hand]"
         if ($game->status != 'starting'){
-            return response()->json(['message' => 'Game has already started or still in lobby', 'game_id' => $game->id]);
+            return response()->json(['status' => 'error', 'message' => 'Game has already started or still in lobby', 'game_id' => $game->id]);
         }
         
         if ($request->has(['card.open', 'card.hand'])) {
             // Check if the values of both keys are numeric
             if (is_numeric($request->input('card.open')) && is_numeric($request->input('card.hand'))) {
                 if( $game->switchCards($request->input('card.open'), $request->input('card.hand'), $request->input('player'))){
-                    return  redirect()->route('games.show', ['game' => $game ]);
+                    return response()->json(['status' => 'success', 'message' => 'Card has been switched', 'game_id' => $game->id]);
                 }
-                return response()->json(['message' => 'Something went wrong', 'game_id' => $game->id]);
+                return response()->json(['status' => 'error', 'message' => 'Something went wrong', 'game_id' => $game->id]);
 
             } else {
-                return response()->json(['message' => 'Values must be numeric', 'game_id' => $game->id]);
+                return response()->json(['status' => 'error', 'message' => 'Values must be numeric', 'game_id' => $game->id]);
             }
         } else {
-            return response()->json(['message' => 'One or both values are missing', 'game_id' => $game->id]);
+            return response()->json(['status' => 'error', 'message' => 'One or both values are missing', 'game_id' => $game->id]);
         }
     }
 
@@ -228,19 +252,9 @@ class GameController extends Controller
      */
     public function playCard(Request $request, Game $game, $playerId, $cardId, $type = 'hand')
     {
-        if ($game->playCard($playerId, $cardId, $type)){
-            event(new GameUpdate($game));
-            return  redirect()->route('games.show', ['game' => $game ]);
-        }
-
-        // $played_card = $game->cards()->where(['game_player_id'=> $playerId, 'id'=> $cardId])->first();
-        // if (!$played_card){
-        //     return response()->json(['message' => 'Card doesnt belong to player', 'game_id' => $game->id]);
-        // }
-        // $game->playCard($game, $played_card, $playerId);
-        // Logic to handle playing a card from a player's hand
-        // Validate the move and update the game state accordingly
-
+        $result = $game->playCard($playerId, $cardId, $type);
+        event(new GameUpdate($game));
+        return $result;
 
     }
 

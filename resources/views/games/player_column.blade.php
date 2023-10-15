@@ -14,55 +14,24 @@
     @php
     $cards = $player->cards()->get()
     @endphp
-    <div class="open-cards d-flex gap-1 ">
-        @foreach($cards as $card)
-            @if ($card->card_type != 'open')
-            @continue
-            @endif
-            @include('games.card')
-        @endforeach
+    <div class="open-cards">
+        <div id="app">
+            <card-list player="{{$player->id}}" type="open" game="{{$game->id}}" :should-display-card="true"></card-list>
+        </div>
     </div>
 
-    <div class="closed-cards d-flex gap-1">
-        @foreach($cards as $card)
-            @if ($card->card_type != 'closed')
-            @continue
-            @endif
-            @include('games.card_closed')
-        @endforeach
+    <div class="closed-cards">
+        <div id="app">
+            <card-list player="{{$player->id}}" type="closed" game="{{$game->id}}" :should-display-card="false"></card-list>
+        </div>
     </div>
 
-    <div class="hand-cards d-flex gap-1 card-holder">
-        @foreach($cards as $card)
-            @if ($card->card_type != 'hand')
-            @continue
-            @endif
-            @include('games.card_closed')
-        @endforeach
+    <div class="hand-cards card-holder">
+        <div id="app">
+            <card-list player="{{$player->id}}" type="hand" game="{{$game->id}}" :should-display-card="false"></card-list>
+        </div>
     </div>
 </div>
 @endforeach
 </div>
 
-<script>
-function handCards(){
-    console.log('run');
-    var cardsholders = document.querySelectorAll('.card-holder');
-    cardsholders.forEach(elements => {
-        console.log(cards)
-        var cards = elements.querySelectorAll('.card');
-        var cardCount = cards.length;
-        var diff = 20 / (cardCount - 1);
-        var start = -10;
-        cards.forEach(element => {
-            element.style.transform = 'skew('+ -start +'deg, '+ start +'deg)';
-            start = start + diff;
-        
-        });
-    })
-    
-}
-document.addEventListener('DOMContentLoaded', handCards);
-
-
-</script>

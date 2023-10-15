@@ -29,6 +29,13 @@ class GameUpdate implements ShouldBroadcastNow
     public $cards;
 
     /**
+     * The cards related to the game.
+     *
+     * @var array
+     */
+    public $players;
+
+    /**
      * Create a new event instance.
      *
      * @param \App\Game $game
@@ -36,9 +43,17 @@ class GameUpdate implements ShouldBroadcastNow
      */
     public function __construct($game)
     {
-        $game->cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit', 'game_player_id')->orderBy('played_at')->get()->toArray();
+        $cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit', 'game_player_id')->where('game_player_id',null)->orderBy('played_at','desc')->get();
         $this->game = $game;
-        $this->cards = $game->cards;
+        $this->cards = $cards;
+        $players = $game->players()->with('cards')->get();
+        foreach($players as $player){
+            foreach($player->cards as $card){
+                $this->players[$player->id][$card->card_type][] = $card;
+            }
+            
+        }
+        
     }
 
     /**
@@ -61,6 +76,7 @@ class GameUpdate implements ShouldBroadcastNow
     {
         return [
             'game' => $this->game,
+            'players' => $this->players,
             'cards' => $this->cards
         ];
     }

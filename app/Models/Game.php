@@ -171,10 +171,12 @@ class Game extends Model
        
         $player = $this->players()->where('id' , $playerId)->first();
         $card = $this->cards()->where('id' , $played_card)->first();
+        
         // Validate if the move is valid (e.g., based on rank and suit matching)
-        if (!$this->validateMove($player, $card, $type)) {
+        $result = $this->validateMove($player, $card, $type);
+        if (is_array($result) && isset($result['status']) && $result['status'] == 'error') {
             dd('Failed validation');
-            return false; // The move is not valid
+            return $result; // The move is not valid
         }
         
         // Move the played card from the player's hand to the discard pile
@@ -224,6 +226,13 @@ class Game extends Model
 
     private function maybeDiscardPile() {
         $top_4 = $this->cards()->where(['card_type'=>'pile'])->orderBy('played_at','desc')->limit(4)->get();
+
+        if (count($top_4) > 0){
+            if ($top_4[0]->card_rank == 10){
+                return true;
+            }
+        }
+
         if (count($top_4) < 4){
             return false;
         }
@@ -337,15 +346,7 @@ class Game extends Model
      */
     private function handleTenSpecialEffect()
     {
-        // Implement the logic for the "10" card's special effect
-        // For example, reverse the direction of play or clear the discard pile
-        // In this example, we reverse the direction of play by changing a game state variable
-
-        if ($this->isClockwisePlay()) {
-            $this->update(['play_direction' => 'counterclockwise']);
-        } else {
-            $this->update(['play_direction' => 'clockwise']);
-        }
+        
     }
 
 
@@ -354,14 +355,14 @@ class Game extends Model
         
         // Check if it's the player's turn
         if (!$this->isPlayerTurn($player)) {
-            dd('Not players turn');
-            return false;
+
+            return ['status'=> 'error','message' => 'isPlayerTurn', 'game_id' => $this->id];
         }
         
         // Check if the player has the card they are trying to play
         if (!$player->hasCard($card, $type)) {
-            dd('Player doesnt have card');
-            return false;
+
+            return ['status'=> 'error','message' => 'hasCard', 'game_id' => $this->id];
         }
 
         // Check if the played card matches the rank or suit of the top discard card
@@ -369,10 +370,10 @@ class Game extends Model
             if ($type == 'closed'){
                 $card->card_type = 'hand';
                 $card->save();
-                return false;
+                return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id];
             }
-            dd('Is not valid');
-            return false;
+      
+            return ['status'=> 'error','message' => 'isValidCard', 'game_id' => $this->id];
         }
 
         // If all checks pass, the move is valid
@@ -438,7 +439,7 @@ class Game extends Model
             case 'Ace':
                 $rank = 14;
                 break;
-            case 'Kings':
+            case 'King':
                 $rank = 13;
                 break;
             case 'Queen':
@@ -502,7 +503,7 @@ class Game extends Model
         $playedCardRank = $this->convert_rank($card->card_rank);
        
         $topDiscardCardRank =  $this->convert_rank($topCard->card_rank);
-       
+
         if ($playedCardRank == 2){
             return true;
         } 
@@ -523,6 +524,7 @@ class Game extends Model
         if ($topDiscardCardRank == 7 && $playedCardRank <= $topDiscardCardRank) {
             return true; // The move is valid
         }
+     
        
         return false; // The move is not valid
     }

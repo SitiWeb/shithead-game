@@ -27,10 +27,11 @@ window.Echo = new Echo({
     encrypted: true,
     cluster: 'eu',
 });
-
-window.Echo.channel("game." + gameData.id)
-    .listen('GameUpdate', (e) => {
-        // Handle the received event data (e.message)
-        console.log(e.game);
-        // Update your UI with the new message
-    });
+if (typeof(gameData) != 'undefined') {
+    window.Echo.channel("game." + gameData.id)
+        .listen('GameUpdate', (e) => {
+            // Handle the received event data (e.message)
+            console.log(e);
+            // Update your UI with the new message
+        });
+}

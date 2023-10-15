@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
 <div class="container-fluid min-vh-100 d-flex flex-column justify-content-between" style="background-color:green;">
     <div class="row" style="flex-grow:4;">
         <div class="col-3">

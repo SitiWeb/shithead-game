@@ -32,6 +32,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/games',  [App\Http\Controllers\GameController::class,'createGame'])->name('games.create');
 
     // Join an existing game
+    Route::get('/games/{game}/data',  [App\Http\Controllers\GameController::class,'gameData'])->name('games.data');
+
+
+    // Join an existing game
     Route::get('/games/{game}/join',  [App\Http\Controllers\GameController::class,'joinGame'])->name('games.join');
 
     // View the game Lobby
