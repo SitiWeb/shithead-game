@@ -24,6 +24,7 @@ window.Echo = new Echo({
     broadcaster: 'pusher',
     key: '200a2bcde647700b50b3',
     wsHost: window.location.hostname,
+
     encrypted: true,
     cluster: 'eu',
 });
