@@ -57,7 +57,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost/shithead-game/public'),
 
-    'asset_url' => env('ASSET_URL'),
+    // 'asset_url' => env('ASSET_URL'),
 
     /*
     |--------------------------------------------------------------------------
