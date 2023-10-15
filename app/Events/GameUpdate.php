@@ -36,9 +36,9 @@ class GameUpdate implements ShouldBroadcastNow
      */
     public function __construct($game)
     {
+        $game->cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit')->get()->toArray();
         $this->game = $game;
-       
-     
+        $this->cards = $game->cards
     }
 
     /**
@@ -61,7 +61,7 @@ class GameUpdate implements ShouldBroadcastNow
     {
         return [
             'game' => $this->game,
-            'cards' => $this->game->cards()->select('id', 'card_rank', 'card_type', 'card_suit')->get()->toArray()
+            'cards' => $this->cards
         ];
     }
 }
