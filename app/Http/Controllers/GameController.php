@@ -134,6 +134,8 @@ class GameController extends Controller
 
                 case 'send_update':
                     event(new GameUpdate($game))    ;
+                    return 'oke';
+                    
                     // // New Pusher instance with our config data
                     // $pusher = new Pusher(
                     //     config('broadcasting.connections.pusher.key'),

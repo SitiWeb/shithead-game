@@ -35,4 +35,4 @@ console.log('test');
 //         // Handle the received event data (e.message)
 //         console.log(e.game);
 //         // Update your UI with the new message
-//     });
+});
