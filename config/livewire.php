@@ -14,7 +14,7 @@ return [
     */
 
     'class_namespace' => 'App\\Livewire',
-    'asset_url' => env('APP_URL'),
+   
     /*
     |---------------------------------------------------------------------------
     | View Path
