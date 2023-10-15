@@ -38,7 +38,7 @@ class GameUpdate implements ShouldBroadcastNow
     {
         $game->cards = $game->cards()->select('id', 'card_rank', 'card_type', 'card_suit')->get()->toArray();
         $this->game = $game;
-        $this->cards = $game->cards
+        $this->cards = $game->cards;
     }
 
     /**
