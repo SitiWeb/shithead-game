@@ -49,6 +49,3 @@
         
     });
 </script>
-
-
-</script>

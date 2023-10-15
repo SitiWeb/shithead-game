@@ -77,6 +77,10 @@
 
     <ul>
         @foreach($cards as $card)
+           
+            @if ($card->card_type != 'hand')
+                @continue
+            @endif
             <li>{{ $card }}</li>
         @endforeach
     </ul>
