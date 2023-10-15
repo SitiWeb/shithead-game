@@ -2,12 +2,14 @@
 
 
     <div class="d-flex justify-content-center">
+        
         @foreach ($game->players()->get() as $player)
             
                 
                 @if ($player->user_id != Auth::user()->id)
                     @continue
                 @endif
+                
                 <div>
                 <div class="user-name">
                     {{ $player->user->name }}
@@ -51,11 +53,12 @@
                         @if ($card->card_type != 'hand')
                             @continue
                         @endif
-                        <input type="checkbox" style="" name="card[hand]" value="{{ $card->id }}"
+                        @livewire('player-cards', ['card' => $card])
+                        {{-- <input type="checkbox" style="" name="card[hand]" value="{{ $card->id }}"
                             id="card-{{ $card->id }}" />
                         <label for="card-{{ $card->id }}">
                             @include('games.card')
-                        </label>
+                        </label> --}}
                     @endforeach
                 </div>
             </div>
@@ -65,3 +68,16 @@
     @include('games.current_buttons')
     </div>
 </form>
+
+<div>
+    <form wire:submit.prevent="addElement">
+        <input type="text" wire:model="newElement" placeholder="New Element">
+        <button type="submit">Add</button>
+    </form>
+
+    <ul>
+        @foreach($cards as $card)
+            <li>{{ $card }}</li>
+        @endforeach
+    </ul>
+</div>

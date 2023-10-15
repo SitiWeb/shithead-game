@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
+use App\Http\Livewire\MyComponent;
+use App\Livewire\PlayerCards;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -48,6 +51,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Play a card
     Route::post('/games/{game}/play', 'GameController@play')->name('games.play');
-
+    Route::get('/player-cards', PlayerCards::class);
     // Additional routes can be added here as needed
 });
