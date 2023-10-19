@@ -19,6 +19,7 @@ class EventServiceProvider extends ServiceProvider
             SendEmailVerificationNotification::class,
         ],
         GameUpdate::class => [],
+        GameListUpdate::class => [],
 
     ];
 

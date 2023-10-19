@@ -55,8 +55,6 @@ export default {
         this.count_closed = 0;
     }
 
-    
-    console.log(jQuery('#check-'+ this.player).hide());
       set_events();
       makeItemsDraggable();
    
@@ -68,7 +66,7 @@ export default {
       axios
         .get(`${this.apiUrl}/games/${this.game}/data`)
         .then((response) => {
-  
+            console.log('new update');
     var cardData = response.data.players[this.player];
           // Create an empty object to store card type counts
      if (typeof cardData['hand'] !== 'undefined') {
@@ -81,7 +79,7 @@ export default {
     } else {
         this.count_closed = 0;
     }
-console.log(jQuery('#check-'+ this.player));
+
           this.loading = false; // Set loading to false when data is loaded
           set_events();
           setTimeout(() => {

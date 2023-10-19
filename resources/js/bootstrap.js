@@ -23,15 +23,28 @@ import Pusher from 'pusher-js';
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: '200a2bcde647700b50b3',
+    wsHost: window.location.hostname,
+    wsPort: 6001,
+    forceTLS: false,
+    disableStats: true,
 
     encrypted: true,
     cluster: 'eu',
 });
-if (typeof(gameData) != 'undefined') {
-    window.Echo.channel("game." + gameData.id)
-        .listen('GameUpdate', (e) => {
-            // Handle the received event data (e.message)
-            console.log(e);
-            // Update your UI with the new message
-        });
-}
+// if (typeof gameData !== 'undefined' && gameData !== null) {
+//     window.Echo.channel("game." + gameData.id)
+//         .listen('GameUpdate', (e) => {
+//             // Handle the received event data (e.message)
+//             console.log(e);
+//             // Update your UI with the new message
+//         });
+
+// } else {
+//     window.Echo.channel("games")
+//         .listen('GameListUpdate', (e) => {
+//             // Handle the received event data (e.message)
+//             console.log(e);
+//             // Update your UI with the new message
+//         });
+
+// }

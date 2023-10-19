@@ -35,11 +35,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/games/{game}/data',  [App\Http\Controllers\GameController::class,'gameData'])->name('games.data');
 
     // Join an existing game
-    Route::get('/games/data',  [App\Http\Controllers\GameController::class,'lobbyData'])->name('games.dataLobby');
+    Route::get('/games/data',  [App\Http\Controllers\GameController::class,'lobbyData'])->name('games.dataGames');
+
+    // Join an existing game
+    Route::get('/games/{game}/data/lobby',  [App\Http\Controllers\GameController::class,'lobbylobbyData'])->name('games.lobbyGames');
 
 
     // Join an existing game
     Route::post('/games/{game}/join',  [App\Http\Controllers\GameController::class,'joinGame'])->name('games.join');
+
+    // Add a bot
+    Route::post('/games/{game}/bot',  [App\Http\Controllers\GameController::class,'botGame'])->name('games.bot');
 
     // Join an existing game
     Route::post('/games/{game}/leave',  [App\Http\Controllers\GameController::class,'leaveGame'])->name('games.leave');

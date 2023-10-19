@@ -1,5 +1,5 @@
 <template>
-  <div class="draggable-item">
+  <div class="draggable-item animation-box">
     
     <label :for="'card-' + card.id" class="animated-div">
     <input

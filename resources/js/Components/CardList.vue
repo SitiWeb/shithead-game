@@ -40,14 +40,17 @@ export default {
     
     // Listen for updates from the WebSocket channel
     Echo.channel('game.' + this.game).listen('GameUpdate', (data) => {
+      console.log(data)
       this.cardData = data.players[this.player][this.type];
       this.cardType = this.type
       this.loading = false; // Set loading to false when data is loaded
       
       // Add click event listeners to each checkbox
-      set_events();
-      handCards();
-      handleCheck(data.game);
+    this.$nextTick((response) => {
+             set_events();
+          handCards();
+          handleCheck(data.game);
+            });
       
    
     });
@@ -62,9 +65,13 @@ export default {
           this.cardData = response.data.players[this.player][this.type];
         this.cardType = this.type
           this.loading = false; // Set loading to false when data is loaded
-          set_events();
+          
+               // Add click event listeners to each checkbox
+    this.$nextTick(() => {
+             set_events();
           handCards();
           handleCheck(response.data.game);
+            });
         })
         .catch((error) => {
           console.error('Error fetching data:', error);

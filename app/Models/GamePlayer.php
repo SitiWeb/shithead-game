@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -70,12 +70,9 @@ class GamePlayer extends Model
     }
 
     public function hasCard($cards_data, $type){
-        
-        $cards = $this->cards()
-    ->whereIn('id', $cards_data)
-    ->where('game_player_id', $this->id)
-    ->where('card_type', $type)
-    ->get();
+        $cards = $this->cards()->where('card_type', $type)->whereIn('id' , $cards_data)
+        ->get();
+  
         if (count($cards_data) == count($cards)){
             return $cards;
         }
@@ -83,9 +80,20 @@ class GamePlayer extends Model
     }
 
     public function takePile(){
-        $game = $this->game;
-    
-        $cards = $game->cards()->where('card_type', 'pile')->get();
+        if($this->game){
+            $cards = $this->game->cards()->where('card_type','pile')->get();
+        }
+        else{
+            $cards = $this->game()
+            ->whereHas('cards', function ($query) {
+                $query->where('card_type', 'pile');
+            })
+            ->with('cards')
+            ->get();
+        }
+        
+       
+        
 
         // Check if there are any cards to update
         if ($cards->isNotEmpty()) {
@@ -133,6 +141,219 @@ class GamePlayer extends Model
         $cardsToDraw->each(function ($card) {
             $card->update(['card_type' => 'hand', 'game_player_id' => $this->id]);
         });
+    }
+
+
+
+    public function sortCards(GamePlayer $player)
+    {
+ 
+        $cardRanks = $player->cards()->whereIn('card_type',['hand', 'open'])->get()->toArray();
+        $cards = [];
+        foreach($cardRanks as $index => $cardRank){
+            $cards[$index] = $cardRank;
+            $cards[$index]['card_rank'] = $this->convert_rank($cardRank['card_rank'] );
+            
+        }
+  
+        $sortedCards = $this->customSortCards($cards);
+
+        $totalCards = count($sortedCards);
+
+        // Define the number of cards to set as "hand" and "open."
+        $cardsInHand = 3;
+        $cardsInOpen = 3;
+
+        // Loop through the array and update the card_type.
+        for ($i = 0; $i < $totalCards; $i++) {
+            if ($i < $cardsInHand) {
+                $sortedCards[$i]['card_type'] = 'open';
+            } elseif ($i >= $totalCards - $cardsInOpen) {
+                $sortedCards[$i]['card_type'] = 'hand';
+            }
+        }
+
+        foreach ($sortedCards as $cardData) {
+            // Find the card by its ID or any unique identifier (e.g., $cardData['id']).
+            $card = Card::find($cardData['id']);
+        
+            if ($card) {
+                // Update the card_type field.
+                $card->card_type = $cardData['card_type'];
+                
+                // Save the changes to the database.
+                $card->save();
+            }
+        }
+
+    }
+
+    public function botPlayCard(){
+        $cardTypes = $this->cards()->distinct()->pluck('card_type')->toArray();
+        if (in_array('hand', $cardTypes)){
+            $type = 'hand';
+        }
+        elseif (in_array('open', $cardTypes)){
+            $type = 'open';
+        }
+        else{
+            $type = 'closed';
+        }
+        
+        
+        $cardRanks = $this->cards()->where('card_type',$type )->get()->toArray();
+       
+        $cards = [];
+        foreach($cardRanks as $index => $cardRank){
+            $cards[$index] = (array) $cardRank;
+            $cards[$index]['card_rank'] = $this->convert_rank($cardRank['card_rank'] );
+            
+        }
+  
+        $sortedCards = $this->customSortCards($cards);
+
+        $lowestRankCards = $this->lowestRankCards($sortedCards);
+        $canPlay = false;
+        $playPosition = false;
+        $play_cards= [];
+        $previous_card = false;
+        
+        foreach($lowestRankCards as $card){
+            
+            if (!$previous_card){
+                $previous_card = $card;
+            }
+            $card_object = (object) $card;
+            $card_postition = $card['position'];
+           
+            if ($canPlay && $previous_card->position != $card_postition){
+                break;
+            }
+
+            
+            $result = $this->game->isValidCard([$card_object]);
+          
+            if ($result['status'] == 'success'){
+                
+                $play_cards[] = $card['id'];
+                $canPlay = true;
+            }
+            
+       
+            $previous_card = $card_object;
+        }
+
+        if ($play_cards){
+            
+            $result =  ($this->game->playCard($this->id, $play_cards, $type));
+            return $result;
+            
+        }
+        else{
+            if ($this->takePile()){
+                return ['status' => 'success', 'action'=> 'took_pile'];
+            }
+            return ['status' => 'success', 'message'=> 'Failed to take pile'];
+            
+            
+        }
+        
+       
+        return $play_cards;
+
+        
+        
+    }
+
+    public function lowestRankCards($cards){
+        
+        
+        $exceptions = [3, 2, 10, 14, 15];
+        $lowestRank = false;
+        $position = 1;
+        $newCards = [];
+        
+        
+        $cards = array_reverse($cards);
+  
+        // Determine the lowest rank (excluding exceptions).
+        foreach ($cards as $cardData) {
+            $cardRank = intval($cardData['card_rank']);
+
+            if (!in_array($cardRank, $exceptions)) {
+                if (!$lowestRank){
+                    $lowestRank = $cardRank;
+                }
+                elseif($lowestRank != $cardRank){
+                    $position++;
+                }
+                $cardData['position'] = $position;
+            }
+            else{
+                if (!$lowestRank){
+                    $lowestRank = $cardRank;
+                }
+                else{
+                    $position++;
+                }
+
+                $cardData['position'] = $position;
+            }
+            $newCards[] = $cardData;
+            
+        }
+        return $newCards;
+    }
+   
+
+    private function customSortCards($cards)
+    {
+        
+        usort($cards, function ($a, $b) {
+            $rankOrder = [
+                "10" => 1, // 10s
+                "3" => 2,  // 3s
+                "11" => 3, // Jack
+                "12" => 4, // Queen
+                "13" => 5, // King
+                "14" => 6, // Ace
+                "15" => 7, // Joker
+                "2" => 8,  // 2s
+            ];
+
+            $rankA = isset($rankOrder[$a['card_rank']]) ? $rankOrder[$a['card_rank']] : 9;
+            $rankB = isset($rankOrder[$b['card_rank']]) ? $rankOrder[$b['card_rank']] : 9;
+
+            if ($rankA === $rankB) {
+                return $a['card_rank'] < $b['card_rank'] ? 1 : -1;
+            }
+
+            return $rankA - $rankB;
+        });
+
+
+        return $cards;
+    }
+
+    private function convert_rank($current_rank){
+        switch($current_rank){
+            case 'Ace':
+                $rank = 14;
+                break;
+            case 'King':
+                $rank = 13;
+                break;
+            case 'Queen':
+                $rank = 12;
+                break;
+            case 'Jack':
+                $rank = 11;
+                break;
+            default:
+                $rank = $current_rank;
+                break;
+        }
+        return $rank;
     }
 
  

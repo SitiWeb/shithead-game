@@ -31,3 +31,19 @@ body {
     background: radial-gradient(circle, transparent 20%, #2e8708 20%, #2e8708 80%, transparent 80%, transparent), radial-gradient(circle, transparent 20%, #2e8708 20%, #2e8708 80%, transparent 80%, transparent) 30px 30px, linear-gradient(#104005 2.4000000000000004px, transparent 2.4000000000000004px) 0 -1.2000000000000002px, linear-gradient(90deg, #104005 2.4000000000000004px, #2e8708 2.4000000000000004px) -1.2000000000000002px 0;
     background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
 }
+
+.animation-container {
+    position: relative;
+
+    overflow: hidden;
+  }
+  
+  .animation-box {
+    float: left;
+    opacity: 1;
+  }
+  
+  #box5 {
+    position: absolute;
+    right: -120px;
+  }

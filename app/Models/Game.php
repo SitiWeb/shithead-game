@@ -168,6 +168,9 @@ class Game extends Model
     public function playCard( $playerId, $played_cards, $type)
     {
         
+        $next = $this->current_turn;
+        
+        
        
         $player = $this->players()->where('id' , $playerId)->first();
         
@@ -188,22 +191,21 @@ class Game extends Model
         $this->fill_stack($player);
 
         if ($this->maybeDiscardPile()){
+
             $this->pileDiscard();
         }
         else{
+            $old_current = $this->current_turn;
             $this->current_turn = $this->nextPlayer();
-            $this->save();
-            
+            $this->save();   
         }
-        event(new GameUpdate($this));
         if($player->cards()->count() === 0){
+            event(new GameUpdate($this));
             $this->endGame();
         }
-        
-        
         // You can add more logic based on your game's rules
 
-        return true; // The card was played successfully
+        return ['status' => 'success', 'game' => $this]; // The card was played successfully
     }
 
     public function nextPlayer(){
@@ -238,27 +240,24 @@ class Game extends Model
         }
         $rank = '';
         $rank_logic = true;
-        $suit = '';
-        $suit_logic = true;
+
+        $i = 0;
         foreach($top_4 as $card){
             $current_rank = $this->convert_rank($card->card_rank);
             $current_suit = $card->card_suit;
+            if ($current_rank == 3){
+                $i++;
+                continue;
+            }
             if (empty($rank)){
                 $rank = $current_rank;
             }
-            if ($rank != $current_rank && $rank != 3){
+            if ($rank != $current_rank){
                 $rank_logic = false;
             }
-
-            if (empty($suit)){
-                $suit = $current_suit;
-            }
-            if ($suit != $current_suit && $rank != 3){
-                $suit_logic = false;
-            }   
+            $i++;
         }
-        if ($suit_logic || $rank_logic){
-      
+        if ($rank_logic && $i >= 4){
             return True;
         }
         return False;
@@ -352,8 +351,8 @@ class Game extends Model
     }
 
 
-    public function validateMove( $player, $cards, $type)
-    {
+    public function validateMove( $player, $cardsinput, $type)
+    {   
         
         // Check if it's the player's turn
         if (!$this->isPlayerTurn($player)) {
@@ -362,10 +361,11 @@ class Game extends Model
         }
         
         // Check if the player has the card they are trying to play
-        $cards = $player->hasCard($cards, $type);
+        $cards = $player->hasCard($cardsinput, $type);
+        
         if (!$cards) {
             
-            return ['status'=> 'error','message' => 'hasCard', 'game_id' => $this->id];
+            return ['status'=> 'error','message' => 'hasCard', 'game_id' => $this->id,'cardsinput'=>$cardsinput,'player'=>$player, 'cards' => $cards, 'type' => $type];
         }
       
 
@@ -396,6 +396,7 @@ class Game extends Model
     {
         // Get the list of players in the game and their positions
         //$players = $this->players()->orderBy('position')->get();
+        
         if ($this->current_turn === 0){
             $beginner = $this->decideBeginner();
             if ($beginner){
@@ -405,9 +406,10 @@ class Game extends Model
         }
         
         if ($this->current_turn === $player->id){
-            return True;
+            return true;
         }
-        return False;
+  
+        return false;
     }
 
     private function decideBeginner(){
@@ -440,7 +442,7 @@ class Game extends Model
         return $most_lowest[0];
     }
 
-    private function convert_rank($current_rank){
+    public function convert_rank($current_rank){
         switch($current_rank){
             case 'Ace':
                 $rank = 14;
@@ -497,12 +499,13 @@ class Game extends Model
      * @param array|null $topDiscardCardData The card data representing the top discard card, or null if the pile is empty.
      * @return bool True if the move is valid, false otherwise.
      */
-    private function isValidCard($cards)
+    public function isValidCard($cards)
     {
         $current_number = '';
         $played_card = false;
         foreach($cards as $card){
-            $suit = $card->card_suit;
+           // dd($card);
+           // $suit = $card->card_suit;
             $rank = $this->convert_rank($card->card_rank);
             if ($rank == 3){
                 if(!$played_card){

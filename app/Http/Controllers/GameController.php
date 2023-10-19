@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 use Pusher\Pusher;
 use Illuminate\Support\Facades\Validator;
 use App\Events\GameUpdate;
+use App\Events\GameListUpdate;
 use App\Models\Game;
 use Auth;
 use App\Models\GamePlayer;
+use GMP;
 //use App\models\Card; // Assuming you have a Card model
 
 use Illuminate\Http\Request;
@@ -33,8 +35,7 @@ class GameController extends Controller
         foreach($players as $player){
             foreach($player->cards as $card){
                 $players_array[$player->id][$card->card_type][] = $card;
-            }
-            
+            } 
         }
    
         return response()->json(['message' => 'Game Data', 'game' => $game, 'cards' => $cards, 'players' => $players_array]);
@@ -46,7 +47,12 @@ class GameController extends Controller
             ->orWhere('status', 'LIKE', 'starting%')
             ->with('players') // Load the related players
             ->get();
-        return response()->json(['message' => 'Lobby Data', 'lobby' => $availableGames]);
+        return response()->json(['message' => 'Game list Data', 'lobby' => $availableGames]);
+    }
+
+    public function lobbylobbyData(Game $game){
+        $game->players = $game->players()->get();
+        return response()->json(['message' => 'Lobby Data', 'lobby' => $game]);
     }
 
     public function leaveGame(Game $game)
@@ -66,14 +72,18 @@ class GameController extends Controller
             if ($game->players->whereNotNull('user_id')->count() == 0){
                 $game->status = 'aborted';
                 $game->save();
+
             }
+            event(new GameListUpdate());
             return response()->json(['status' => 'success', 'message' => 'Succesfully left lobby']);
         }
         if ($game->players->whereNotNull('user_id')->count() == 0){
             $game->status = 'aborted';
             $game->save();
+            event(new GameListUpdate());
             return response()->json(['status' => 'error', 'message' => 'Deleted room']);
         }
+        event(new GameListUpdate());
         return response()->json(['status' => 'error', 'message' => 'Failed to leave lobby']);
    
        
@@ -94,6 +104,7 @@ class GameController extends Controller
 
         // Check if validation fails
         if ($validator->fails()) {
+            event(new GameListUpdate());
             return response()->json(['status' => 'error', 'message' => implode(", ",$validator->errors()->all())]);
         }
         // Create a new game instance
@@ -120,7 +131,7 @@ class GameController extends Controller
         }
 
         // Optionally, set up additional game-specific initialization logic here
-
+        event(new GameListUpdate());
         return response()->json(['status'=> 'success','message' => 'Game created successfully', 'game_id' => $game->id]);
     }
 
@@ -134,6 +145,7 @@ class GameController extends Controller
         $user_id = Auth::user()->id;
         foreach ($players as $player){
             if ($player->user_id == $user_id){
+                event(new GameListUpdate());
                 return response()->json(['status'=> 'error','message' => 'You are already in this lobby', 'game_id' => $game->id]);
             }
 
@@ -151,14 +163,44 @@ class GameController extends Controller
         if ($can_join){
             $spot->user_id = $user_id;
             $spot->save();
+            event(new GameListUpdate());
             return response()->json(['status'=> 'success','message' => 'You joined this lobby', 'game_id' => $game->id]);
         }
+        event(new GameListUpdate());
         return response()->json(['status'=> 'error','message' => 'Failed to join lobby', 'game_id' => $game->id]);
     }
 
     public function showLobby(Game $game){
        
         return view('games.lobby', ['game' => $game]);
+    }
+
+    public function botGame(Game $game){
+        $players = $game->players; // This will retrieve the players related to the game.
+
+        // Now you can work with the $players collection.
+        $can_join = false;
+        
+        foreach ($players as $player){
+            if ($player->user_id){
+                // Slot taken
+                continue;
+            }
+
+            if ($player->user_id === null){
+                $can_join = true;
+                $spot = $player;
+            }
+        }
+
+        if ($can_join){
+            $spot->user_id = 3;
+            $spot->save();
+            event(new GameListUpdate());
+            return response()->json(['status'=> 'success','message' => 'Bot successfully joined', 'game_id' => $game->id]);
+        }
+        return response()->json(['status'=> 'error','message' => 'Bot cant join', 'game_id' => $game->id]);
+  
     }
 
     public function showBoard(Game $game){
@@ -173,8 +215,10 @@ class GameController extends Controller
     public function startGame(Request $request, Game $game)
     {
         if ($game->startGame()){
+            event(new GameListUpdate());
             return  redirect()->route('games.show', ['game' => $game ]);
         }
+        event(new GameListUpdate());
         return view('games.lobby', ['game' => $game]);
         // Logic to start the game, including dealing cards and determining the starting player
     }
@@ -191,22 +235,58 @@ class GameController extends Controller
                 case 'play_card':
              
                     if ($request->has('card.hand') && $request->has('player')){
-                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.hand'), 'hand'));
+                        $result = $this->playCard($request, $game, $request->input('player'), $request->input('card.hand'), 'hand');
                     }elseif($request->has('card.closed') && $request->has('player')){
-                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.closed'), 'closed'));
+                        $result = $this->playCard($request, $game, $request->input('player'), $request->input('card.closed'), 'closed');
                     }
                     elseif($request->has('card.open') && $request->has('player')){
-                        return response()->json($this->playCard($request, $game, $request->input('player'), $request->input('card.open'), 'open'));
+                        $result = $this->playCard($request, $game, $request->input('player'), $request->input('card.open'), 'open');
                     }
-                    return response()->json(['status'=>'error','message' => 'Missing a parameter', 'game_id' => $game->id]);
+                    else{
+                        return response()->json(['status'=> 'error','message' => 'Unknown or Missing action', 'game_id' => $game->id]);
+                    }
+                    return response()->json($result);
+                   
                 case 'draw_pile':
                     $result = $this->DrawPile($request, $game);
                     if($result['status'] ==  'success'){
-                        event(new GameUpdate($game));
-                        return response()->json($result);
+                        if ($result['game']->current_turn){
+                            $playerIdToFind = 3;
+                            $foundPlayer = $result['game']->players->first(function ($player) use ($playerIdToFind) {
+                                return $player->user_id === $playerIdToFind;
+                            });
+                            event(new GameUpdate($game));
+                            if ($foundPlayer){
+                                sleep(2);
+                                $result = $foundPlayer->botPlayCard();
+                                if ($result['status'] == 'success'){
+                                    $result['game']->current_turn = $result['game']->nextPlayer();
+                                    $result['game']->save();
+                                    event(new GameUpdate($result['game']));
+                                    $result['message'] = 'Bot played turn';
+                                    return response()->json($result);
+                                }
+                                
+                            }
+                         
+                            return response()->json($result);
+                        }
+                      
                     }
                     return response()->json($result);
                 case 'send_update':
+                    $current_player = $game->current_turn;
+                    foreach($game->players as $player){
+                        if ( $current_player == $player-> id && $player->user_id == 3){
+                            $result = $player->botPlayCard();
+                            if (isset($result['status']) && $result['status'] == 'success'){           
+                                $game->current_turn = $game->nextPlayer();
+                                $game->save();
+                                event(new GameUpdate($game));
+                                $result['message'] = 'Bot played turn';
+                            }
+                        }
+                    }
                     event(new GameUpdate($game));
                     return response()->json(['status'=>'success','message' => 'Sent an update to all players', 'game_id' => $game->id]);
                 default:
@@ -225,7 +305,7 @@ class GameController extends Controller
                     $game = $player->game()->first();
                     $game->current_turn = $game->nextPlayer();
                     $game->save();
-                    return ['status' => 'success', 'message' => 'Succesfully drew pile'];
+                    return ['status' => 'success', 'message' => 'Succesfully drew pile', 'game' => $game];
                 }
                 return ['status' => 'error', 'message' => 'There is no pile to take'];
             }
@@ -234,10 +314,18 @@ class GameController extends Controller
     }
 
     public function ready(Request $request, Game $game){
+    
+        
+        
         if ($request->has(['player'])) {
             if ($game->players()->where('id', $request->input('player'))->update(['is_ready'=>true])){
                 $is_ready = true;
                 foreach($game->players()->get() as $player){
+                    if ($player->user_id === 3){
+                        $player->sortCards($player);
+                        $player->is_ready = true;
+                        $player->save();
+                    }
                     if (!$player->is_ready){
                  
                         $is_ready = false;
@@ -263,8 +351,9 @@ class GameController extends Controller
         
         if ($request->has(['card.open', 'card.hand'])) {
             // Check if the values of both keys are numeric
-            if (is_numeric($request->input('card.open')) && is_numeric($request->input('card.hand'))) {
+            if (($request->input('card.open')) && ($request->input('card.hand'))) {
                 if( $game->switchCards($request->input('card.open'), $request->input('card.hand'), $request->input('player'))){
+                    event(new GameUpdate($game));
                     return response()->json(['status' => 'success', 'message' => 'Card has been switched', 'game_id' => $game->id]);
                 }
                 return response()->json(['status' => 'error', 'message' => 'Something went wrong', 'game_id' => $game->id]);
@@ -282,19 +371,46 @@ class GameController extends Controller
      */
     public function playCard(Request $request, Game $game, $playerId, $cardId, $type = 'hand')
     {
-        $result = $game->playCard($playerId, $cardId, $type);
-        event(new GameUpdate($game));
+        $types = ['hand', 'closed', 'open'];
+        if (!in_array($type, $types)){
+            return ['status' => 'Error', 'message' => 'Type doesnt exist'];
+        }
+        $result = $game->playCard($game->current_turn , $cardId, $type);
+        $do_turn = true;
+        while ($do_turn){
+            
+            
+            event(new GameUpdate($game));
+            if ($result['status'] == 'success'){
+                $game = Game::find($game->id);
+                $playerIdToFind = $game->current_turn;
+                foreach($game->players as $player){
+                    if ($player->id == $playerIdToFind && $player->user_id == 3){
+                        $foundPlayer = $player;
+                    }
+                }
+
+                if ($foundPlayer){
+                    // next turn is a bot
+                    sleep(2);
+                    $result = $foundPlayer->botPlayCard();
+                    if (isset($result['status']) && $result['status'] == 'success'){           
+                        $game->current_turn = $game->nextPlayer();
+                        $game->save();
+                        event(new GameUpdate($game));
+                        $result['message'] = 'Bot played turn';
+                    }
+                }
+                else{
+                    break;
+                }
+            }else{
+                $result = ['status' => 'error', 'message' => 'Testing'];
+                break;
+            }
+
+        }  
         return $result;
-
-    }
-
-    /**
-     * Draw cards into a player's hand.
-     */
-    public function drawCards(Request $request, $gameId, $playerId, $numCards)
-    {
-        // Logic to handle drawing cards into a player's hand
-        // Validate the move and update the game state accordingly
     }
 
     /**

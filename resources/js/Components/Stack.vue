@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex gap-1 flex-wrap">
+  <div class="d-flex gap-1 flex-wrap flex-row-reverse animation-container">
     <Card v-for="card in cards" :key="card.id" :card="card" :visible="true" />
   </div>
 </template>
@@ -30,7 +30,11 @@ export default {
     // Listen for updates from the WebSocket channel
     Echo.channel('game.' + this.game).listen('GameUpdate', (data) => {
       // Assuming data contains the new card information
-      console.log(data);
+
+      
+
+     
+
       this.card = data.cards[0];
       // Use the filter method to keep only rows with card type "pile"
       var filteredCards =  data.cards.filter(function(card) {
@@ -41,6 +45,7 @@ export default {
    
       this.loading = false; // Set loading to false when data is loaded
     });
+  
   },
   methods: {
     suitIcon(suit) {
@@ -77,6 +82,8 @@ export default {
       axios
         .get(`${this.apiUrl}/games/${this.game}/data`)
         .then((response) => {
+
+
           this.card = response.data.cards[0];        
           var filteredCards =  response.data.cards.filter(function(card) {
             return card.card_type === "pile";

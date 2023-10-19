@@ -14,40 +14,9 @@
                                         {{ __('Logout') }}
                                     </a>
                 <h1>Available Games</h1>
-                <table class="table table-dark">
-
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Name</th>
-                            <th scope="col">Made by</th>
-                            <th scope="col">Num of players</th>
-                            <th scope="col">Join</th>
-                            <th scope="col">Lobby</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($games as $game)
-                            <tr>
-                                <th scope="row">{{ $game->id }}</th>
-                                <td>{{ $game->name }}</td>
-                                <td>{{ $game->created_by }}</td>
-                                <td>{{ $game->players()->count() }}</td>
-                                <td>
-                                    <form method="POST" id="joinGameForm"
-                                        action="{{ route('games.join', ['game' => $game]) }}">
-                                        @csrf
-                                        <input type="hidden" name="game" value="$game->id" />
-                                        <button class="btn btn-primary" type="submit">Join game</button>
-                                    </form>
-                                </td>
-                                <td>
-                                    <a class="btn btn-secondary" href="{{route('games.lobby',['game'=> $game])}}">Lobby</a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div id="app">
+                    <game-table :games="{{ json_encode($games) }}"></game-table>
+                  </div>
             </div>
         </div>
     </div>

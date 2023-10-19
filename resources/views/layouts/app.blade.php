@@ -252,6 +252,12 @@ function makeItemsDraggable() {
 // Get all draggable items by class name
 
 
+
+</script>
+@endisset
+<script>
+
+    
 // Call the function to make items draggable and define the action
 function showToast(message, type, options) {
     const toastContainer = document.getElementById('toast-container');
@@ -273,16 +279,122 @@ function showToast(message, type, options) {
 }
 
 function handleCheck(data){
-    console.log(data.current_turn);
     if (data.current_turn){
         jQuery('.user-checks').hide()
         jQuery('#check-'+data.current_turn).show()
     }
-    
-    console.log();
+
+
 }
 
+function setGameListButtons(){
+    $(".form-with-ajax").off("submit");
+    $(".form-with-ajax").on("submit", function(event) {
+        event.preventDefault(); // Prevent the default form submission.
+
+        $.ajax({
+            type: "POST",
+            url: $(this).attr("action"), // Get the form's action URL.
+            data: $(this).serialize(), // Serialize the form data.
+            success: function(response) {
+                if (response.status == 'success') {
+                    showToast(response.message, 'success', { delay: 3000 });
+                } else if (response.status == 'error') {
+                    showToast(response.message, 'error', { delay: 3000 });
+                } else {
+                    console.log(response);
+                    showToast('Unknown response', 'error', { delay: 3000 });
+                }
+                // You can update the UI or perform other actions as needed.
+            },
+            error: function(xhr, status, error) {
+
+                showToast('Unknown response', 'error', { delay: 3000 });
+                console.error(xhr.responseText);
+            }
+        });
+    });
+
+
+    $("#createLobbyForm").off("submit");
+    $("#createLobbyForm").on("submit", function(event) {
+        event.preventDefault(); // Prevent the default form submission.
+
+        $.ajax({
+            type: "POST",
+            url: $(this).attr("action"), // Get the form's action URL.
+            data: $(this).serialize(), // Serialize the form data.
+            success: function(response) {
+                if (response.status == 'success') {
+                    showToast(response.message, 'success', { delay: 3000 });
+                } else if (response.status == 'error') {
+                    showToast(response.message, 'error', { delay: 3000 });
+                } else {
+                    console.log(response);
+                    showToast('Unknown response', 'error', { delay: 3000 });
+                }
+                // You can update the UI or perform other actions as needed.
+            },
+            error: function(xhr, status, error) {
+
+                showToast('Unknown response', 'error', { delay: 3000 });
+                console.error(xhr.responseText);
+            }
+        });
+    });
+
+
+    $(".lobby-forms").off("submit");
+    $(".lobby-forms").on("submit", function(e) {
+        e.preventDefault(); // Prevent the default form submission
+
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr("action"), // Get the form's action URL.
+            data: $(this).serialize(), // Serialize the form data.
+            success: function(response) {
+                if (response.status == 'success') {
+                    showToast(response.message, 'success', { delay: 3000 });
+                } else if (response.status == 'error') {
+                    showToast(response.message, 'error', { delay: 3000 });
+                } else {
+                    console.log(response);
+                    showToast('Unknown response', 'error', { delay: 3000 });
+                }
+                // You can update the UI or perform other actions as needed.
+            },
+            error: function(xhr, status, error) {
+
+                showToast('Unknown response', 'error', { delay: 3000 });
+                console.error(xhr.responseText);
+            }
+        });
+    });
+
+
+}
+
+function playCardsAnimation(){
+    var tl = gsap.timeline();
+    var container = jQuery(".animation-container");
+    var cardCount = container.children.length;
+    if (cardCount > 0){
+        tl.to(".animation-container .animation-box", {
+            duration: 1,
+            x: '-'+jQuery(".animation-container").children().eq(0).width(),
+            stagger: 0.2,
+      });
+
+    }
+}
+
+      
+
+$(function() {
+    setGameListButtons();
+});
+
 </script>
-@endisset
+
 </body>
 </html>
