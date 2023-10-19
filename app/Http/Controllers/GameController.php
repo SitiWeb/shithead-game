@@ -377,6 +377,7 @@ class GameController extends Controller
         }
         $result = $game->playCard($game->current_turn , $cardId, $type);
         $do_turn = true;
+        $result = ['status' => 'error','message' => 'unknown error'];
         while ($do_turn){
             
             
@@ -405,7 +406,7 @@ class GameController extends Controller
                     break;
                 }
             }else{
-                $result = ['status' => 'error', 'message' => 'Testing'];
+                
                 break;
             }
 

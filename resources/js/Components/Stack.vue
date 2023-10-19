@@ -31,20 +31,17 @@ export default {
     Echo.channel('game.' + this.game).listen('GameUpdate', (data) => {
       // Assuming data contains the new card information
 
-      
+             
+        // Set up a callback function to run when the animation is complete
+            this.setCards(data);
+             var tl = this.playCardsAnimation();
+           
+      });
 
      
 
-      this.card = data.cards[0];
-      // Use the filter method to keep only rows with card type "pile"
-      var filteredCards =  data.cards.filter(function(card) {
-          return card.card_type === "pile";
-      });
-      var limitedCards = filteredCards.slice(0, 4);
-      this.cards = limitedCards;
    
-      this.loading = false; // Set loading to false when data is loaded
-    });
+    
   
   },
   methods: {
@@ -62,6 +59,19 @@ export default {
           return '?';
       }
     },
+
+    setCards(data){
+      this.card = data.cards[0];
+            // Use the filter method to keep only rows with card type "pile"
+            var filteredCards =  data.cards.filter(function(card) {
+                return card.card_type === "pile";
+            });
+            var limitedCards = filteredCards.slice(0, 4);
+            this.cards = limitedCards;
+
+        
+            this.loading = false; // Set loading to false when data is loaded
+    },
    
     rankValue(rank) {
       switch (rank) {
@@ -77,6 +87,22 @@ export default {
           return rank;
       }
     },
+    playCardsAnimation(){
+      var tl = gsap.timeline();
+      var container = jQuery(".animation-container");
+      var cardCount = container.children.length;
+      
+      if (cardCount > 0){
+        container.width = container.children().eq(0).width() * 4;
+          tl.to(".animation-container .animation-box", {
+              duration: 1,
+              x: '-'+container.children().eq(0).width(),
+              stagger: 0.2,
+        });
+
+      }
+      return tl;
+  },
     fetchCardData() {
       // Fetch initial card data from your Laravel backend
       axios
@@ -91,7 +117,7 @@ export default {
           
           
           var limitedCards = filteredCards.slice(0, 4);
-          this.cards = limitedCards;
+          this.cards = filteredCards;
           this.loading = false; // Set loading to false when data is loaded
         })
         .catch((error) => {

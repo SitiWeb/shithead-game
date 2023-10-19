@@ -375,20 +375,44 @@ function setGameListButtons(){
 }
 
 function playCardsAnimation(){
-    var tl = gsap.timeline();
-    var container = jQuery(".animation-container");
-    var cardCount = container.children.length;
-    if (cardCount > 0){
-        tl.to(".animation-container .animation-box", {
-            duration: 1,
-            x: '-'+jQuery(".animation-container").children().eq(0).width(),
-            stagger: 0.2,
-      });
+      var tl = gsap.timeline();
+      var container = jQuery(".animation-container");
+      var cardCount = container.children.length;
+      
+      if (cardCount > 0){
+        container.width = container.children().eq(0).width() * 5;
+          tl.to(".animation-container .animation-box", {
+              duration: 1,
+              x: '-'+container.children().eq(0).width(),
+              stagger: 0.2,
+        });
 
+      }
     }
+
+    function drawCardsAnimation() {
+  var tl = gsap.timeline();
+  var container = jQuery(".animation-container");
+  var cardCount = container.children().length; // Use .length instead of .length
+  var hand = jQuery(".hand");
+  
+  if (cardCount > 0) {
+    // Calculate the new position based on the hand element
+    var handPosition = hand.offset();
+    
+    // Iterate through each card and move it to the hand position
+    container.children().each(function(index, card) {
+      var cardPosition = jQuery(card).offset();
+      
+      tl.to(card, {
+        duration: 0.2,
+        x: handPosition.left - cardPosition.left,
+        y: handPosition.top - cardPosition.top,
+      });
+    });
+  }
 }
 
-      
 
 $(function() {
     setGameListButtons();
